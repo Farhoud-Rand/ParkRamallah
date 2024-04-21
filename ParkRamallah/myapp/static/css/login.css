@@ -32,14 +32,13 @@ input {
     color: #7eabf2 !important;
 }
 
-/* Increase specificity of the selector */
 .navbar {
-    background-color: rgb(98 102 105 / 58%) !important; /* Black color with 70% transparency */
+    background-color: rgb(98 102 105 / 58%) !important;
 }
 
 .logo-img {
-    width:50px; /* Adjust the width to your desired size */
-    height: 3rem; /* Automatically adjust the height to maintain aspect ratio */
+    width:50px;
+    height: 3rem;
 }
 
 .slidebar-nav ul li a {
