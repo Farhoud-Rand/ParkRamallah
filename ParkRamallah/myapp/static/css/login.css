@@ -5,12 +5,13 @@
 }
 
 .overlay {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.3);
+    z-index: -1;
 }
 
 body {
@@ -49,7 +50,7 @@ input {
     transition: 0.5s;
 }
 
-.slidebar-nav ul li a:hover {
+.selected, .slidebar-nav ul li a:hover {
     background-color: #eeeeee;
     border-radius: 4px;
 }
