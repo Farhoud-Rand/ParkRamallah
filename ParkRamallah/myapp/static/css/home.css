@@ -1,0 +1,39 @@
+body {
+    background-color: #dcdada;
+}
+
+.slidebar-nav ul li a {
+    font-size: 20px;
+    text-decoration: none;
+    display: block;
+    padding: 6px 10px;
+    transition: 0.5s;
+}
+
+.selected, .slidebar-nav ul li a:hover {
+    background-color: #eeeeee;
+    border-radius: 4px;
+}
+
+.navbar {
+    background-color: rgb(30, 31, 32) !important;
+}
+
+.logo-img {
+    width:50px;
+    height: 3rem;
+}
+
+/* Custom styles */
+.container-bg {
+    background-image: url("{% static 'img/we_ramallah.jpg' %}");
+    background-size: 100%; /* Ensure the image covers the entire container */
+    background-position: center;
+    padding: 15% 0;
+    background-repeat: no-repeat;
+}
+
+.search-container {
+    background-color:rgb(53 52 52 / 82%);
+    margin-top: -8%; /* Adjust this value as needed */
+}
