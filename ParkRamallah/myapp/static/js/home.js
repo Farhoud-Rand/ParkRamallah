@@ -52,7 +52,7 @@ function updateParkResults(parks) {
                     <h5 class="card-title">${park.name}</h5>
                     <p class="card-text">Location: ${park.location}</p>
                     <p class="card-text">Type: ${park.type}</p>
-                    <a href="#" class="btn btn-danger">Reserve</a>
+                    <a href="#" class="btn btn-success">Reserve</a>
                 </div>
             </div>
         `;
@@ -89,4 +89,23 @@ function displayReservations(reservations) {
         `;
         reservationsAccordion.appendChild(accordionItem);
     });
+}
+
+function search() {
+    const location = document.getElementById('location').value;
+    const type = document.getElementById('type').value;
+    const name = document.getElementById('name').value; 
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `/search/?location=${location}&type=${type}&name=${name}`, true); 
+
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            updateParkResults(response);  // Update park results with the search response
+        } else {
+            console.error('Failed to fetch search results');
+        }
+    };
+    xhr.send();
 }

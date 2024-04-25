@@ -88,23 +88,25 @@ def user_reservations(request):
     return JsonResponse(serialized_reservations, safe=False)
 
 def search_parks(request):
-    location = request.GET.get('location')
-    park_type = request.GET.get('type')  # Change variable name to park_type
+    park_location = request.GET.get('location')
+    park_type = request.GET.get('type')
+    park_name = request.GET.get('name')  
 
-    if location and park_type:
-        parks = Park.objects.filter(location=location, park_type=park_type)  # Use park_type instead of type
-    elif location:
-        parks = Park.objects.filter(location=location)
-    elif park_type:
-        parks = Park.objects.filter(park_type=park_type)
-    else:
-        parks = Park.objects.all()
+    # Filter parks based on location, type, and optionally park number
+    parks = Park.objects.all()
+    if park_location:
+        parks = parks.filter(location=park_location)
+    if park_type:
+        parks = parks.filter(park_type=park_type)
+    if park_name:
+        parks = parks.filter(name=park_name)
 
     serialized_parks = [{
         'name': park.name,
         'location': park.location,
-        'type': park.park_type
-    } for park in parks]  # Serialize parking data
+        'type': park.park_type,
+    } for park in parks]
+
     return JsonResponse(serialized_parks, safe=False)
 
 def all_parks(request):

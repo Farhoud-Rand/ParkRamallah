@@ -57,10 +57,13 @@
                     <form id="searchForm">
                         {% csrf_token %}
                         <div class="row">
-                            <div class="col-md-5">
+                            <div class="col-md-3">
+                                <input id="name" class="form-control" type="search" placeholder="Name" aria-label="Name">
+                            </div>
+                            <div class="col-md-3">
                                 <input id="location" class="form-control" type="search" placeholder="Location" aria-label="Location">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <select id="type" class="form-select">
                                     <option value="">Select Type</option>
                                     <option value="normal">Normal</option>
