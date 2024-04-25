@@ -1,18 +1,37 @@
 from django.shortcuts import render, redirect
-from .forms import ReservationForm, UserRegisterForm
+from .forms import ReservationForm, UserRegisterForm, UserLoginForm
 from datetime import datetime
-from django.contrib.auth import authenticate, login as auth_login 
+from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
+from . import models
 
 # Users: login page 
 # This function renders the login page template
-def login(request):
-    
-    return render(request,"login.html")
+def login_view(request):
+    if request.method == 'POST':
+        form = UserLoginForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            try:
+                user = authenticate(request, username=username, password=password)
+                if user is not None:
+                    login(request, user)
+                    return JsonResponse({'success': True})  # Redirect then to the home page
+                else:
+                    return JsonResponse({'success': False, 'errors': 'Invalid username or password'}, status=400)
+            except:
+                return JsonResponse({'success': False, 'errors': 'User not exist'}, status=400)
+        else:
+            errors = form.errors
+            return JsonResponse({'success': False, 'errors': errors}, status=400)
+    else:
+        form = UserLoginForm()
+    return render(request, "login.html", {'form': form})
 
 # Users: Register page
 # This function handles user registration 
-def register(request):
+def register_view(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
         if form.is_valid():
@@ -22,7 +41,7 @@ def register(request):
             password = form.cleaned_data.get('password1')
             user = authenticate(request,username=username, password=password)
             if user is not None:
-                auth_login(request, user)  # Log in the user
+                login(request, user)  # Log in the user
                 return JsonResponse({'success': True})  # Return success response
             else:
                 return JsonResponse({'success': False, 'errors': 'Authentication failed'}, status=400)
@@ -36,8 +55,15 @@ def register(request):
     return render(request, "register.html", {'form': form})
 
 # Users: Home page
+# This function renders the home page template
 def home(request):
     return render(request, "home.html")
+
+# Users: logout page 
+# This function handles user logout
+def logout_view(request):
+    logout(request)
+    return redirect('/login')
 
 # Users: Reservation page
 def reserve(request):

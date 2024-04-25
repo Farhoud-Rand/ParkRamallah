@@ -36,7 +36,6 @@
                     </div>
                     <div class="offcanvas-body">
                         <ul class="navbar-nav">
-                            <li class="nav-item"><a class="text-dark" href="#">Home</a></li>
                             <li class="nav-item"><a class="text-dark" href="/login">Login</a></li>
                             <li class="nav-item"><a class="text-dark selected" href="#">Register</a></li>
                             <li class="nav-item"><a class="text-dark" href="#">About us</a></li>
@@ -55,7 +54,7 @@
                     <div class="card-body">
                         <h1 class="text-center mb-4 display-5 fw-bold" style="color: aliceblue;">Register</h1>
                         
-                        <form id="registerForm" class="needs-validation" novalidate>
+                        <form id="registerForm" class="needs-validation" method="post" novalidate>
                             {% csrf_token %}
                             <div class="mb-3 custom-input-group">
                                 <span class="input-group-text">

@@ -40,7 +40,7 @@
                         <a class="nav-link" href="#">About us</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Logout</a>
+                        <a class="nav-link" href="/logout">Logout</a>
                     </li>
                 </ul>
             </div>
@@ -56,6 +56,7 @@
                 <div class="search-container p-1 py-2 rounded align-items-center">
                     <!-- <h2 class="text-dark mb-3 text-white">Search</h2> -->
                     <form id="searchForm">
+                        {% csrf_token %}
                         <div class="row">
                             <div class="col-md-5">
                                 <input id="location" class="form-control" type="search" placeholder="Location" aria-label="Location">

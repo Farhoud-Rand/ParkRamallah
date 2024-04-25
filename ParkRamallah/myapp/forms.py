@@ -36,6 +36,12 @@ class UserRegisterForm(UserCreationForm):
             raise forms.ValidationError("This email is already registered")
         return email
 
+# Form to login a user
+class UserLoginForm(forms.Form):
+    username = forms.CharField(max_length=150,widget=forms.TextInput(attrs={'class': 'form-control p-2', 'placeholder': 'Username'}))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control p-2', 'placeholder': 'Password'}))
+
+
 # Form to add new reservation for a user         
 class ReservationForm(forms.ModelForm):
     class Meta:
