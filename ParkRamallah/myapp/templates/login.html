@@ -53,6 +53,7 @@
                     <div class="card-body">
                         <h1 class="text-center mb-4 display-5 fw-bold" style="color: aliceblue;">Login</h1>
                         <form id="loginForm" class="needs-validation" novalidate>
+                            {% csrf_token %}
                             <div class="mb-3 custom-input-group">
                                 <span class="input-group-text">
                                     <i class="bi bi-person-fill text-light fs-2"></i>
