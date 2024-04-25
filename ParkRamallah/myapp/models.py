@@ -36,4 +36,10 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 ###################################################################
+# Function to get all user reservations 
+def get_user_reservations(user):
+    return Reservation.objects.filter(user=user)
 
+# Function to return all parking information
+def get_all_parkings(): 
+    return Park.objects.all()

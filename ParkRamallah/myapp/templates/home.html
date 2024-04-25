@@ -54,7 +54,6 @@
         <div class="row justify-content-center ">
             <div class="col-md-8">
                 <div class="search-container p-1 py-2 rounded align-items-center">
-                    <!-- <h2 class="text-dark mb-3 text-white">Search</h2> -->
                     <form id="searchForm">
                         {% csrf_token %}
                         <div class="row">
@@ -87,10 +86,11 @@
                 </div>
             </div>
         </div>
+        <hr>
     </div>
-
     <div class="container mt-5">
-        <div class="row" id="parkResults">
+        <h2 class="text-dark mb-3">Parking lots</h2>
+        <div class="row" id="parkResults" data-initial-parks="{{ parks|safe }}">
             <!-- Park search results will be displayed here -->
         </div>
     </div>

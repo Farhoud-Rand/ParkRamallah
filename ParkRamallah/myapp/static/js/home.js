@@ -1,34 +1,58 @@
-function search() {
-    const location = document.getElementById('location').value;
-    const type = document.getElementById('type').value;
+document.addEventListener('DOMContentLoaded', function () {
+    // Load all parks when the page loads
+    loadAllParks();
 
+    // Load user reservations when the page loads
+    loadReservations();
+
+    // Add any additional initialization code here
+});
+
+// Function to load all parks
+function loadAllParks() {
     const xhr = new XMLHttpRequest();
-    xhr.open('GET', `/search/?location=${location}&type=${type}`, true);
+    xhr.open('GET', '/all_parks/', true);
     xhr.onload = function () {
         if (xhr.status === 200) {
-            const response = JSON.parse(xhr.responseText);
-            updateParkResults(response.parks);
+            const parks = JSON.parse(xhr.responseText);
+            updateParkResults(parks);
         } else {
-            console.error('Failed to fetch search results');
+            console.error('Failed to fetch all parks');
         }
     };
     xhr.send();
 }
 
+// Function to load user reservations
+function loadReservations() {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', '/user/reservations/', true);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            const reservations = JSON.parse(xhr.responseText);
+            displayReservations(reservations);
+        } else {
+            console.error('Failed to fetch user reservations');
+        }
+    };
+    xhr.send();
+}
+
+// Function to update park results
 function updateParkResults(parks) {
     const parkResultsContainer = document.getElementById('parkResults');
     parkResultsContainer.innerHTML = '';
 
     parks.forEach(park => {
         const col = document.createElement('div');
-        col.className = 'col-md-6';
+        col.className = 'col-md-4';
         col.innerHTML = `
-            <div class="card mb-3">
+            <div class="card mb-3 text-center">
                 <div class="card-body">
                     <h5 class="card-title">${park.name}</h5>
                     <p class="card-text">Location: ${park.location}</p>
-                    <p class="card-text">Price: ${park.price}</p>
-                    <a href="#" class="btn btn-primary">Reserve</a>
+                    <p class="card-text">Type: ${park.type}</p>
+                    <a href="#" class="btn btn-danger">Reserve</a>
                 </div>
             </div>
         `;
@@ -36,14 +60,8 @@ function updateParkResults(parks) {
     });
 }
 
-// Function to load user reservations
-function loadReservations() {
-    // Sample reservations data (replace with actual data from backend)
-    const reservations = [
-        { id: 1, status: 'Active', parkNumber: 1, arrivalTime: '2024-04-20 09:00', departureTime: '2024-04-20 17:00' },
-        { id: 2, status: 'Expired', parkNumber: 2, arrivalTime: '2024-04-22 10:00', departureTime: '2024-04-22 18:00' }
-    ];
-
+// Function to display user reservations
+function displayReservations(reservations) {
     const reservationsAccordion = document.getElementById('reservationsAccordion');
     reservations.forEach(reservation => {
         const accordionItem = document.createElement('div');
@@ -72,6 +90,3 @@ function loadReservations() {
         reservationsAccordion.appendChild(accordionItem);
     });
 }
-
-// Call the function to load reservations when the page loads
-window.onload = loadReservations;
