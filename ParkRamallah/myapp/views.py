@@ -3,7 +3,7 @@ from .forms import ReservationForm, UserRegisterForm, UserLoginForm
 from datetime import datetime
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
-from .models import *
+from . import models
 from django.contrib.auth.decorators import login_required
 
 # Users: Register page
@@ -70,79 +70,144 @@ def not_login(request):
 # This function renders the home page template
 @login_required(login_url='/not_login')
 def home(request):
-    parks = Park.objects.all()
+    parks = models.Park.get_all_parkings()
     return render(request, 'home.html',{'parks': parks})
 
-
+# This function returns user reservations as json response
 @login_required(login_url='/not_login')
 def user_reservations(request):
-    user = request.user
-    reservations = Reservation.objects.filter(user=user)
-    serialized_reservations = [{
-        'id': reservation.id,
-        'status': reservation.status,
-        'parkNumber': reservation.parkNumber,
-        'arrivalTime': reservation.arrivalTime.strftime('%Y-%m-%d %H:%M'),
-        'departureTime': reservation.departureTime.strftime('%Y-%m-%d %H:%M'),
-    } for reservation in reservations]  # Serialize reservations data
+    reservations = models.Reservation.get_user_reservations(request.user)
+    serialized_reservations = models.Reservation.serialize_reservations(reservations)
     return JsonResponse(serialized_reservations, safe=False)
 
+# This function returns result of search as json response
+@login_required(login_url='/not_login')
 def search_parks(request):
-    park_location = request.GET.get('location')
-    park_type = request.GET.get('type')
-    park_name = request.GET.get('name')  
-
-    # Filter parks based on location, type, and optionally park number
-    parks = Park.objects.all()
-    if park_location:
-        parks = parks.filter(location=park_location)
-    if park_type:
-        parks = parks.filter(park_type=park_type)
-    if park_name:
-        parks = parks.filter(name=park_name)
-
-    serialized_parks = [{
-        'name': park.name,
-        'location': park.location,
-        'type': park.park_type,
-    } for park in parks]
-
+    parks = models.Park.search_result(request)
+    serialized_parks = models.Park.serialize_parks(parks)
     return JsonResponse(serialized_parks, safe=False)
 
+# This function returns all parks information as json response
+@login_required(login_url='/not_login')
 def all_parks(request):
-    parks = Park.objects.all()
-    serialized_parks = serialized_parks = [{
-        'name': park.name,
-        'location': park.location,
-        'type': park.park_type
-    } for park in parks]  # Serialize parking data
+    parks = models.Park.get_all_parkings()
+    serialized_parks = models.Park.serialize_parks(parks)
     return JsonResponse(serialized_parks, safe=False)
 
 # Users: Reservation page
-# def reserve(request):
-#     if request.method == 'POST':
-#     # If the form has been submitted
-#         form = ReservationForm(request.POST)
-#         if form.is_valid():
-#                 # If the form data is valid, process the reservation
-#                 # Here you can implement logic to save the reservation to the database
-#                 # For now, we'll just redirect back to the reservation page
-#                 form.save()
-#                 return redirect('/home')  # Redirect to a success page
-#         else:
-#             # If it's a GET request, create a blank form
-#             form = ReservationForm()
+@login_required(login_url='/not_login')
+def reserve(request, park_id):
+    try:
+        park = models.Park.objects.get(id=park_id)
+    except models.Park.DoesNotExist:
+        return JsonResponse({'success': False, 'errors': 'Park does not exist.'}, status=400)
 
-#         # Render the reservation page with the form
-#         return render(request, 'reservation.html', {'form': form})
-#     # current_datetime = datetime.now().strftime('%Y-%m-%dT%H:%M')  # Format: YYYY-MM-DDTHH:MM
-#     # context = {'current_datetime': current_datetime}
-#     # if request.method == 'POST':
-#     #     form = ReservationForm(request.POST)
-#     #     if form.is_valid():
-#     #         form.save()
-#     #         # Redirect to a success page or home page
-#     #         return redirect('/home')  # Replace 'home' with the URL name of your home page
-#     # else:
-#     #     form = ReservationForm()
-#     # return render(request, 'reservation.html', {'form': form, **context})
+    if request.method == 'POST':
+        form = ReservationForm(request.POST)
+        if form.is_valid():
+            start_time = form.cleaned_data.get('start_time')
+            end_time = form.cleaned_data.get('end_time')
+            reservation = form.save(commit=False)
+            reservation.user = request.user
+            reservation.park = park
+            reservation.status = 'active'
+            reservation.total_price = calculate_price(start_time, end_time, park.price)
+            reservation.save()
+            return JsonResponse({'success': True, 'message': 'Reservation successfully made!'})
+        else:
+            errors = form.errors
+            return JsonResponse({'success': False, 'errors': errors}, status=400)
+    else:
+        form = ReservationForm()
+    return render(request, 'reservation.html', {'form': form, 'park': park})
+
+def calculate_price(start_time, end_time, price_per_hour):
+    duration_hours = (end_time - start_time).total_seconds() / 3600
+    total_price = duration_hours * price_per_hour
+    return total_price
+
+@login_required(login_url='/not_login')
+def cancel_reservation(request, reservation_id):
+    try:
+        reservation = models.Reservation.objects.get(pk=reservation_id)
+    except models.Reservation.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Reservation not found'}, status=404)
+    
+    # Update the reservation status to "cancelled"
+    reservation.status = 'cancelled'
+    reservation.save()
+
+    return JsonResponse({'success': True, 'message': 'Reservation cancelled successfully'})
+
+
+# Define a view to handle updating reservation status to "expired"
+def expire_reservation(request, reservation_id):
+    try:
+        reservation = models.Reservation.objects.get(pk=reservation_id)
+    except models.Reservation.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Reservation not found'}, status=404)
+    
+    if reservation.status != 'expired' and reservation.status != 'cancelled' and reservation.end_time < timezone.now():
+        reservation.status = 'expired'
+        reservation.save()
+        return JsonResponse({'success': True, 'message': 'Reservation expired successfully'})
+    else:
+        return JsonResponse({'success': False, 'message': 'Reservation already expired or cancelled'})
+    
+
+@login_required(login_url='/not_login')
+def edit_reservation(request, reservation_id):
+    try:
+        reservation = models.Reservation.objects.get(pk=reservation_id)
+    except models.Reservation.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Reservation not found'}, status=404)
+    
+    if request.method == 'POST':
+        form = ReservationForm(request.POST, instance=reservation)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'success': True, 'message': 'Reservation updated successfully'})
+        else:
+            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+    else:
+        form = ReservationForm(instance=reservation)
+        if reservation.status == 'active':
+            # Render the edit_reservation.html template with the form and reservation details
+            return render(request, 'edit_reservation.html', {'form': form, 'reservation': reservation})
+        else:
+            # If the reservation status is not "active", do not show the edit page
+            return JsonResponse({'success': False, 'message': 'Reservation is not active'}, status=400)
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
+from .models import Reservation
+
+@receiver(post_save, sender=Reservation)
+def update_reservation_status(sender, instance, **kwargs):
+    if instance.end_time < timezone.now() and instance.status != 'cancelled':
+        instance.status = 'expired'
+        instance.save()
+
+@login_required(login_url='/not_login')
+def profile_view(request):
+    user = request.user
+    if request.method == 'POST':
+        form = UserRegisterForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()  # Update the user's information
+            # Authenticate and login the user
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password1')
+            user = authenticate(request,username=username, password=password)
+            if user is not None:
+                return JsonResponse({'success': True})  # Return success response
+            else:
+                return JsonResponse({'success': False, 'errors': 'Authentication failed'}, status=400)
+        else:
+            errors = form.errors
+            return JsonResponse({'success': False, 'errors': errors}, status=400)
+    else:
+        form = UserRegisterForm(instance=user)  # Pre-fill the form with user's data
+    
+    return render(request, "profile.html", {'form': form})

@@ -2,7 +2,10 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django import forms
 from django.utils import timezone
+from datetime import datetime
 from .models import Reservation, Park
+from django.forms import DateTimeInput
+from django.core.exceptions import ValidationError
 
 # Form to add new admin/user in admin panel
 class AdminCreationForm(UserCreationForm):
@@ -41,48 +44,39 @@ class UserLoginForm(forms.Form):
     username = forms.CharField(max_length=150,widget=forms.TextInput(attrs={'class': 'form-control p-2', 'placeholder': 'Username'}))
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control p-2', 'placeholder': 'Password'}))
 
-
-# Form to add new reservation for a user         
+# Form to add new reservation for a user  
 class ReservationForm(forms.ModelForm):
     class Meta:
         model = Reservation
         fields = ['park', 'start_time', 'end_time']
+        widgets = {
+            'start_time': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'end_time': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+        }
 
     def clean(self):
         cleaned_data = super().clean()
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
+        park = cleaned_data.get('park')
 
-        # Check if start time is in the past
-        if start_time and start_time < timezone.now():
-            raise forms.ValidationError("Start time cannot be in the past.")
+        if start_time and end_time and park:
+            # Check if end time is greater than start time
+            if end_time <= start_time:
+                raise forms.ValidationError("End time must be greater than start time.")
+            
+            # Check if start time is in the past
+            if start_time <= timezone.now():
+                raise forms.ValidationError("Start time cannot be in the past.")
+            
+            # Check if there are any existing reservations for the selected park
+            existing_reservations = Reservation.objects.filter(
+                park=park,
+                start_time__lt=end_time,
+                end_time__gt=start_time,
+                status='active'  # Only consider active reservations
+            )
 
-        # Check if end time is before start time
-        if start_time and end_time and end_time <= start_time:
-            raise forms.ValidationError("End time must be after start time.")
-
-        # Check if the selected interval is already reserved
-        reservations_in_interval = Reservation.objects.filter(
-            start_time__lt=end_time, end_time__gt=start_time
-        )
-        if self.instance:
-            # Exclude current reservation from the check if it's an update
-            reservations_in_interval = reservations_in_interval.exclude(pk=self.instance.pk)
-
-        if reservations_in_interval.exists():
-            raise forms.ValidationError("This interval is already reserved.")
-
+            if existing_reservations.exists():
+                raise forms.ValidationError("This time slot is already reserved.")
         return cleaned_data
-
-
-
-
-
-
-
-
-
-
-
-
-
