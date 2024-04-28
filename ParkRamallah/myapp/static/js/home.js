@@ -96,7 +96,7 @@ function displayReservations(reservations) {
                     <ul class="list-group">
                         <li class="list-group-item">Park Number: ${reservation.park}</li>
                         <li class="list-group-item">Arrival Time: ${reservation.start_time}</li>
-                        <li class="list-group-item">Departure Time: ${reservation.end_time}</li>
+                        <li class="list-group-item">Duration Time: ${reservation.duration}</li>
                     </ul>
                     <div class="mt-3">
                         ${reservation.status === 'active' ? `<button type="button" class="btn btn-warning me-2" onclick="editReservation(${reservation.id})">Edit Reservation</button>` : ''}
@@ -186,7 +186,7 @@ function checkAndUpdateReservationStatus() {
     // Iterate through each reservation
     reservations.forEach(reservation => {
         // Compare current time with end time of reservation
-        if (new Date() > new Date(reservation.end_time) && reservation.status !== 'expired' && reservation.status !== 'cancelled') {
+        if (reservation.status !== 'expired' && reservation.status !== 'cancelled') { // new Date() > new Date(reservation.end_time) && 
             // Send a request to update reservation status to "expired"
             fetch(`/expire_reservation/${reservation.id}/`, {  // Note the URL for updating reservation status to "expired"
                 method: 'POST',

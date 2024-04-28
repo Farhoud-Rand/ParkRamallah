@@ -19,6 +19,11 @@ class Park(models.Model):
     def get_all_parkings(cls): 
         return cls.objects.all()
     
+    # Function to get a parking by its ID and return its information
+    @classmethod
+    def get_park_by_id(cls,id): 
+        return cls.objects.get(id=id)
+    
     # Function to fillter parkings according to search 
     @classmethod
     def search_result(cls, data):
@@ -55,8 +60,9 @@ class Reservation(models.Model):
     ]
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_reservations', null=True)
     park = models.ForeignKey(Park, on_delete=models.CASCADE, related_name='park_reservations', null=True)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
+    date = models.DateField()
+    start_time = models.TimeField()
+    duration = models.DecimalField(max_digits=3, decimal_places=1)  # in hours
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     total_price = models.FloatField(default=0.0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -74,8 +80,8 @@ class Reservation(models.Model):
             'id': reservation.id,
             'status': reservation.status,
             'park': reservation.park.id,
-            'start_time': reservation.start_time.strftime('%Y-%m-%d %H:%M'),
-            'end_time': reservation.end_time.strftime('%Y-%m-%d %H:%M'),
+            'start_time': reservation.start_time.strftime('%H:%M'),
+            'duration': reservation.duration,
         } for reservation in reservations]
         return serialized_reservations
 

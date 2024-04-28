@@ -97,9 +97,9 @@
                             <input type="datetime-local" name="start_time" class="form-control" id="id_start_time" value="{{ reservation.start_time|date:'Y-m-d\TH:i' }}" required>
                         </div>
                         <div class="mb-3">
-                            <label for="id_end_time" class="form-label">End Time</label>
+                            <!-- <label for="id_end_time" class="form-label">End Time</label> -->
                             <!-- Use Django template tags to populate end time -->
-                            <input type="datetime-local" name="end_time" class="form-control" id="id_end_time" value="{{ reservation.end_time|date:'Y-m-d\TH:i' }}" required>
+                            <!-- <input type="datetime-local" name="end_time" class="form-control" id="id_end_time" value="{{ reservation.end_time|date:'Y-m-d\TH:i' }}" required> -->
                         </div>
                         <button type="submit" class="btn btn-primary">Update Reservation</button>
                     </form>

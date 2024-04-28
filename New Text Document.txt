@@ -1,0 +1,121 @@
+<div class="container container-bg">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="p-1 py-2 rounded align-items-center">
+                    <h2 class="text-dark mb-3 text-white">New Reservation</h2>
+                    <form id="reserve_form" method="post">
+                        {% csrf_token %}
+                        <div>
+                            <label for="id_park">Park:</label>
+                            <select name="park" class="form-control" required aria-invalid="true" id="id_park">
+                                <option value="{{ park.id }}" selected>{{ park.name }}</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_start_time" class="form-label">Start Time</label>
+                            {{ form.start_time }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_end_time" class="form-label">End Time</label>
+                            {{ form.end_time }}
+                        </div>
+                        <button type="submit" class="btn btn-primary">Reserve</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+--------------
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>   
+<!-- Hidden input field to hold CSRF token -->
+<input type="hidden" id="csrf_token" value="{% csrf_token %}">   
+    <script>
+    // Get the current date and time
+    const currentDateTime = new Date();
+    // Format the current date and time for the input field
+    const currentDateTimeString = currentDateTime.toISOString().slice(0, 16);
+
+    // Get the start time and end time input elements
+    const startTimeInput = document.getElementById('id_start_time');
+    const endTimeInput = document.getElementById('id_end_time');
+
+    // Set the min attribute for start time and end time inputs
+    startTimeInput.min = currentDateTimeString;
+    endTimeInput.min = currentDateTimeString;
+
+    // Get the CSRF token from the hidden input field
+    const csrfToken = document.getElementById('csrf_token').value;
+
+    // Get the form element and add event listener for form submission
+    document.getElementById('reserve_form').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent form submission
+
+        // Submit the form via AJAX
+        fetch(this.action, {
+            method: 'POST',
+            body: new FormData(this),
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => {
+            console.log('Response Status:', response.status); // Debugging: Log response status
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response Data:', data);
+
+            if (data.success) {
+                // Login successful
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Reservation successful made!',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/home';  // Redirect to home page
+                    }
+                });
+            } else {
+                // Display error message using SweetAlert
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Reserve Failed',
+                    text: data.errors 
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'Something went wrong! Please try again later.',
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'OK'
+            });
+        });
+    });
+
+    </script>
+
+------------------
+// Get the current date and time
+    const currentDateTime = new Date();
+    // Format the current date and time for the input field
+    const currentDateTimeString = currentDateTime.toISOString().slice(0, 16);
+
+    // Get the start time and end time input elements
+    const startTimeInput = document.getElementById('id_start_time');
+
+    // Set the min attribute for start time and end time inputs
+    startTimeInput.min = currentDateTimeString;

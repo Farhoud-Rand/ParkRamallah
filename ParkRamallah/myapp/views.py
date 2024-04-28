@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from .forms import ReservationForm, UserRegisterForm, UserLoginForm
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from . import models
@@ -95,6 +95,37 @@ def all_parks(request):
     return JsonResponse(serialized_parks, safe=False)
 
 # Users: Reservation page
+from decimal import Decimal
+
+# @login_required(login_url='/not_login')
+# def reserve(request, park_id):
+#     try:
+#         park = models.Park.objects.get(id=park_id)
+#     except models.Park.DoesNotExist:
+#         return JsonResponse({'success': False, 'errors': 'Park does not exist.'}, status=400)
+
+#     if request.method == 'POST':
+#         form = ReservationForm(request.POST, park_id=park_id)
+#         if form.is_valid():
+#             reservation = form.save(commit=False)
+#             reservation.user = request.user
+#             reservation.park = park
+#             reservation.status = 'active'
+#             reservation.total_price = 10 * float(form.cleaned_data['duration'])
+#             reservation.save()
+#             return JsonResponse({'success': True, 'message': 'Reservation successfully made!'})
+#         else:
+#             errors = form.errors
+#             return JsonResponse({'success': False, 'errors': errors}, status=400)
+#     else:
+#         form = ReservationForm(park_id=park_id)
+#     return render(request, 'reservation.html', {'form': form, 'park': park})
+
+from django.http import JsonResponse
+import logging
+
+logger = logging.getLogger(__name__)
+
 @login_required(login_url='/not_login')
 def reserve(request, park_id):
     try:
@@ -103,28 +134,31 @@ def reserve(request, park_id):
         return JsonResponse({'success': False, 'errors': 'Park does not exist.'}, status=400)
 
     if request.method == 'POST':
-        form = ReservationForm(request.POST)
+        form = ReservationForm(request.POST, park_id=park_id)
         if form.is_valid():
+            date = form.cleaned_data.get('date')
             start_time = form.cleaned_data.get('start_time')
-            end_time = form.cleaned_data.get('end_time')
+            duration = form.cleaned_data.get('duration')
             reservation = form.save(commit=False)
             reservation.user = request.user
             reservation.park = park
             reservation.status = 'active'
-            reservation.total_price = calculate_price(start_time, end_time, park.price)
+            reservation.total_price = 10*duration
             reservation.save()
             return JsonResponse({'success': True, 'message': 'Reservation successfully made!'})
         else:
             errors = form.errors
+            logger.error("Form errors: %s", errors)  # Log form errors for debugging
             return JsonResponse({'success': False, 'errors': errors}, status=400)
     else:
-        form = ReservationForm()
+        form = ReservationForm(park_id=park_id)
     return render(request, 'reservation.html', {'form': form, 'park': park})
 
-def calculate_price(start_time, end_time, price_per_hour):
-    duration_hours = (end_time - start_time).total_seconds() / 3600
-    total_price = duration_hours * price_per_hour
-    return total_price
+
+# def calculate_price(start_time, end_time, price_per_hour):
+#     duration_hours = (end_time - start_time).total_seconds() / 3600
+#     total_price = duration_hours * price_per_hour
+#     return total_price
 
 @login_required(login_url='/not_login')
 def cancel_reservation(request, reservation_id):
@@ -147,7 +181,7 @@ def expire_reservation(request, reservation_id):
     except models.Reservation.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Reservation not found'}, status=404)
     
-    if reservation.status != 'expired' and reservation.status != 'cancelled' and reservation.end_time < timezone.now():
+    if reservation.status != 'expired' and reservation.status != 'cancelled': #and reservation.end_time < timezone.now():
         reservation.status = 'expired'
         reservation.save()
         return JsonResponse({'success': True, 'message': 'Reservation expired successfully'})
@@ -182,13 +216,18 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from .models import Reservation
+from decimal import Decimal
 
 @receiver(post_save, sender=Reservation)
 def update_reservation_status(sender, instance, **kwargs):
-    if instance.end_time < timezone.now() and instance.status != 'cancelled':
-        instance.status = 'expired'
-        instance.save()
-
+    if instance.status != 'cancelled' and instance.status != 'expired':  
+        start_datetime = timezone.make_aware(datetime.combine(instance.date, instance.start_time))
+        duration_float = float(instance.duration)  # Convert Decimal to float
+        end_datetime = start_datetime + timedelta(hours=duration_float)
+        if end_datetime < timezone.now():
+            instance.status = 'expired'
+            instance.save()
+    
 @login_required(login_url='/not_login')
 def profile_view(request):
     user = request.user
@@ -211,3 +250,6 @@ def profile_view(request):
         form = UserRegisterForm(instance=user)  # Pre-fill the form with user's data
     
     return render(request, "profile.html", {'form': form})
+
+def about_us_view(request):
+    return render(request, "about_us.html")
