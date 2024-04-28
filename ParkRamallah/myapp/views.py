@@ -143,7 +143,7 @@ def reserve(request, park_id):
             reservation.user = request.user
             reservation.park = park
             reservation.status = 'active'
-            reservation.total_price = 10*duration
+            reservation.total_price = 10*float(duration)
             reservation.save()
             return JsonResponse({'success': True, 'message': 'Reservation successfully made!'})
         else:
@@ -153,12 +153,6 @@ def reserve(request, park_id):
     else:
         form = ReservationForm(park_id=park_id)
     return render(request, 'reservation.html', {'form': form, 'park': park})
-
-
-# def calculate_price(start_time, end_time, price_per_hour):
-#     duration_hours = (end_time - start_time).total_seconds() / 3600
-#     total_price = duration_hours * price_per_hour
-#     return total_price
 
 @login_required(login_url='/not_login')
 def cancel_reservation(request, reservation_id):

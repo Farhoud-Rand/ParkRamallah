@@ -85,16 +85,54 @@ class UserLoginForm(forms.Form):
 #                 raise forms.ValidationError("This time slot is already reserved.")
 #         return cleaned_data
 
+
+
 from django.utils import timezone
 
 class ReservationForm(forms.ModelForm):
     def __init__(self, *args, park_id=None, **kwargs):
         super(ReservationForm, self).__init__(*args, **kwargs)
         self.park_id = park_id
+        
+        # Get current time
+        current_time = datetime.now().replace(second=0, microsecond=0)
 
-    class Meta:
-        model = Reservation
-        fields = ['date', 'start_time', 'duration']
+        # Generate choices for the next 24 hours in 30-minute intervals starting from the next half hour
+        choices_for_start_time = []
+        next_time = current_time + timedelta(minutes=(30 - current_time.minute % 30))
+        for _ in range(48):  # 48 half-hour intervals cover 24 hours
+            time_str = next_time.strftime('%H:%M')  # Format as '09:00'
+            time_str = time_str.lstrip('0')  # Remove leading zeros from hours
+            choices_for_start_time.append((time_str, time_str))
+            next_time += timedelta(minutes=30)
+
+        # Create the ChoiceField for start time
+        self.fields['start_time'] = forms.ChoiceField(
+            choices=choices_for_start_time, 
+            widget=forms.Select(attrs={'class': 'form-control'})
+        )
+
+        # Generate choices for durations from 30 minutes to 6 hours
+        choices_for_duration = [
+            (0.5, '30 minutes'),
+            (1, '1 hour'),
+            (1.5, '1.5 hours'),
+            (2, '2 hours'),
+            (2.5, '2.5 hours'),
+            (3, '3 hours'),
+            (3.5, '3.5 hours'),
+            (4, '4 hours'),
+            (4.5, '4.5 hours'),
+            (5, '5 hours'),
+            (5.5, '5.5 hours'),
+            (6, '6 hours'),
+        ]
+
+        # Create the ChoiceField for duration
+        self.fields['duration'] = forms.ChoiceField(
+            choices=choices_for_duration, 
+            widget=forms.Select(attrs={'class': 'form-control'})
+        )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -113,14 +151,14 @@ class ReservationForm(forms.ModelForm):
 
         if date < timezone.now().date():
             raise forms.ValidationError("Selected date is in the past")
-
+    
         # Convert duration to float
         duration_value = float(duration)
 
-        # Combine date and start_time to create datetime object
-        start_datetime = timezone.make_aware(datetime.combine(date, start_time))
+        # Calculate start datetime
+        start_datetime = datetime.combine(date, datetime.strptime(start_time, '%H:%M').time())
 
-        # Calculate end time
+        # Calculate end datetime
         end_datetime = start_datetime + timedelta(hours=duration_value)
 
         # Filter conflicting reservations
@@ -129,9 +167,12 @@ class ReservationForm(forms.ModelForm):
             date=date,
             start_time__lt=end_datetime.time(),
             start_time__gte=start_datetime.time()
+
         )
         if conflicting_reservations.exists():
-            raise forms.ValidationError("Selected time slot is not available")
-
+            raise forms.ValidationError("This time slot is already reserved")
         return cleaned_data
 
+    class Meta:
+        model = Reservation
+        fields = ['date', 'start_time', 'duration']
