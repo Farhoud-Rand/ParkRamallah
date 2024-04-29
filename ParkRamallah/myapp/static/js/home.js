@@ -58,7 +58,6 @@ function updateParkResults(parks) {
     });
 }
 
-
 function search() {
     const location = document.getElementById('location').value;
     const type = document.getElementById('type').value;
@@ -112,7 +111,6 @@ function displayReservations(reservations) {
     });
 }
 
-
 // Function to determine badge color based on reservation status
 function getBadgeColor(status) {
     switch (status.toLowerCase()) {
@@ -125,30 +123,6 @@ function getBadgeColor(status) {
         default:
             return 'secondary';
     }
-}
-// Function to edit a reservation
-function editReservation(reservationId) {
-    // Send a request to the server to update the reservation status to "cancelled"
-    fetch(`/edit_reservation/${reservationId}/`, {  // Note the trailing slash
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'), // Include CSRF token
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({}) // Empty body since we're just updating the status
-    })
-    .then(response => {
-        if (response.ok) {
-            // Reservation successfully cancelled
-            console.log(`Reservation with ID ${reservationId} edited successfully.`);        
-        } else {
-            // Error occurred while cancelling reservation
-            console.error(`Error cancelling reservation with ID ${reservationId}: ${response.statusText}`);
-        }
-    })
-    .catch(error => {
-        console.error(`Error editting reservation with ID ${reservationId}: ${error}`);
-    });
 }
 
 // Function to cancel a reservation
@@ -216,4 +190,13 @@ function removeReservation(reservationId) {
             });
         }
     });
+}
+
+// Function to edit a reservation
+function editReservation(reservationId) {
+    // Construct the URL for edit_reservation.html with reservation ID
+    const editUrl = `/edit_reservation/${reservationId}/`;
+    
+    // Redirect the user to edit_reservation.html with reservation information
+    window.location.href = editUrl;
 }

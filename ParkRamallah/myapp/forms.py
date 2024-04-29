@@ -90,6 +90,9 @@ class UserLoginForm(forms.Form):
 from django.utils import timezone
 
 class ReservationForm(forms.ModelForm):
+    choices_for_start_time = []
+    choices_for_duration = []
+
     def __init__(self, *args, park_id=None, **kwargs):
         super(ReservationForm, self).__init__(*args, **kwargs)
         self.park_id = park_id
@@ -98,39 +101,40 @@ class ReservationForm(forms.ModelForm):
         current_time = datetime.now().replace(second=0, microsecond=0)
 
         # Generate choices for the next 24 hours in 30-minute intervals starting from the next half hour
-        choices_for_start_time = []
-        next_time = current_time + timedelta(minutes=(30 - current_time.minute % 30))
-        for _ in range(48):  # 48 half-hour intervals cover 24 hours
-            time_str = next_time.strftime('%H:%M')  # Format as '09:00'
-            time_str = time_str.lstrip('0')  # Remove leading zeros from hours
-            choices_for_start_time.append((time_str, time_str))
-            next_time += timedelta(minutes=30)
+        if not self.choices_for_start_time:
+            next_time = current_time + timedelta(minutes=(30 - current_time.minute % 30))
+            for _ in range(48):  # 48 half-hour intervals cover 24 hours
+                time_str = next_time.strftime('%H:%M')  # Format as '09:00'
+                time_str = time_str.lstrip('0')  # Remove leading zeros from hours
+                self.choices_for_start_time.append((time_str, time_str))
+                next_time += timedelta(minutes=30)
 
         # Create the ChoiceField for start time
         self.fields['start_time'] = forms.ChoiceField(
-            choices=choices_for_start_time, 
+            choices=self.choices_for_start_time, 
             widget=forms.Select(attrs={'class': 'form-control'})
         )
 
         # Generate choices for durations from 30 minutes to 6 hours
-        choices_for_duration = [
-            (0.5, '30 minutes'),
-            (1, '1 hour'),
-            (1.5, '1.5 hours'),
-            (2, '2 hours'),
-            (2.5, '2.5 hours'),
-            (3, '3 hours'),
-            (3.5, '3.5 hours'),
-            (4, '4 hours'),
-            (4.5, '4.5 hours'),
-            (5, '5 hours'),
-            (5.5, '5.5 hours'),
-            (6, '6 hours'),
-        ]
+        if not self.choices_for_duration:
+            self.choices_for_duration = [
+                (0.5, '30 minutes'),
+                (1, '1 hour'),
+                (1.5, '1.5 hours'),
+                (2, '2 hours'),
+                (2.5, '2.5 hours'),
+                (3, '3 hours'),
+                (3.5, '3.5 hours'),
+                (4, '4 hours'),
+                (4.5, '4.5 hours'),
+                (5, '5 hours'),
+                (5.5, '5.5 hours'),
+                (6, '6 hours'),
+            ]
 
         # Create the ChoiceField for duration
         self.fields['duration'] = forms.ChoiceField(
-            choices=choices_for_duration, 
+            choices=self.choices_for_duration, 
             widget=forms.Select(attrs={'class': 'form-control'})
         )
 

@@ -92,9 +92,6 @@ def update_reservation_status(reservations):
             duration_hours = float(reservation.duration)
             end_datetime = start_datetime + timedelta(hours=duration_hours)
 
-            print("End time:", end_datetime)  # Print end_datetime for debugging
-            print("Current time:", current_time)  # Print current_time for debugging
-            print("Result",end_datetime < current_time)
             if end_datetime < current_time:
                 reservation.status = 'expired'
                 reservation.save()
@@ -169,28 +166,40 @@ def remove_reservation(request, reservation_id):
     except Reservation.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Reservation not found'})
 
+
 @login_required(login_url='/not_login')
 def edit_reservation(request, reservation_id):
-    try:
-        reservation = models.Reservation.objects.get(pk=reservation_id)
-    except models.Reservation.DoesNotExist:
-        return JsonResponse({'success': False, 'message': 'Reservation not found'}, status=404)
+    reservation = get_object_or_404(models.Reservation, id=reservation_id)
+    print("Reservation = ",reservation)
+    start_time_choices = ReservationForm(instance=reservation).fields['start_time'].choices
+    print("Time = ",start_time_choices)
+    print("RT = ", reservation.start_time)
+    
+    duration_choices = ReservationForm(instance=reservation).fields['duration'].choices
     
     if request.method == 'POST':
         form = ReservationForm(request.POST, instance=reservation)
         if form.is_valid():
             form.save()
-            return JsonResponse({'success': True, 'message': 'Reservation updated successfully'})
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+
+                return JsonResponse({'success': True})  # Return success response for AJAX request
+            else:
+                # Redirect to some success page for non-AJAX request
+                # For example: return redirect('success_page')
+                pass
         else:
-            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+
+                return JsonResponse({'success': False, 'errors': form.errors}, status=400)  # Return form errors for AJAX request
+            else:
+                # Render the form again with errors for non-AJAX request
+                pass
     else:
         form = ReservationForm(instance=reservation)
-        if reservation.status == 'active':
-            # Render the edit_reservation.html template with the form and reservation details
-            return render(request, 'edit_reservation.html', {'form': form, 'reservation': reservation})
-        else:
-            # If the reservation status is not "active", do not show the edit page
-            return JsonResponse({'success': False, 'message': 'Reservation is not active'}, status=400)
+
+    return render(request, 'edit_reservation.html', {'form': form, 'reservation': reservation, 'start_time_choices': start_time_choices, 'duration_choices': duration_choices})
+
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -225,6 +234,7 @@ def profile_view(request):
 def about_us_view(request):
     return render(request, "about_us.html")
 
+@login_required(login_url='/not_login')
 def add_comment(request):
     if request.method == 'POST':
         form = CommentForm(request.POST)
