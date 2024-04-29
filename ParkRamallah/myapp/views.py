@@ -155,7 +155,19 @@ def cancel_reservation(request, reservation_id):
 
     return JsonResponse({'success': True, 'message': 'Reservation cancelled successfully'})
 
-
+@login_required(login_url='/not_login')
+def remove_reservation(request, reservation_id):
+    try:
+        reservation = Reservation.objects.get(id=reservation_id)
+        # Check if the reservation exists and its status is expired or cancelled
+        if reservation.status in ['expired', 'cancelled']:
+            # Delete the reservation
+            reservation.delete()
+            return JsonResponse({'success': True, 'message': 'Reservation removed successfully'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Reservation cannot be removed'})
+    except Reservation.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Reservation not found'})
 
 @login_required(login_url='/not_login')
 def edit_reservation(request, reservation_id):

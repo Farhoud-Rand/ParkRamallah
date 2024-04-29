@@ -101,6 +101,8 @@ function displayReservations(reservations) {
                     <div class="mt-3">
                         ${reservation.status === 'active' ? `<button type="button" class="btn btn-warning me-2" onclick="editReservation(${reservation.id})">Edit Reservation</button>` : ''}
                         ${reservation.status === 'active' ? `<button type="button" class="btn btn-danger" onclick="cancelReservation(${reservation.id})">Cancel Reservation</button>` : ''}
+                        ${(reservation.status === 'cancelled' || reservation.status === 'expired') ? `<button type="button" class="btn btn-danger" onclick="removeReservation(${reservation.id})">Remove Reservation</button>` : ''}
+
                     </div>
                 </div>
             </div>
@@ -177,6 +179,40 @@ function cancelReservation(reservationId) {
             })
             .catch(error => {
                 console.error(`Error cancelling reservation with ID ${reservationId}: ${error}`);
+            });
+        }
+    });
+}
+
+// Function to remove a reservation
+function removeReservation(reservationId) {
+    // Display a sweet alert to confirm cancellation
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'This reservation will be no longer in you Reservations!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, remove it!',
+        cancelButtonText: 'No, keep it'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // User confirmed the cancellation
+            const csrfToken = document.getElementById('csrf_token').value;
+
+            // Send a request to the server to remove the reservation
+            fetch(`/remove_reservation/${reservationId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken, // Include CSRF token
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/home';    
+                }
+            })
+            .catch(error => {
+                console.error(`Error removing reservation with ID ${reservationId}: ${error}`);
             });
         }
     });
