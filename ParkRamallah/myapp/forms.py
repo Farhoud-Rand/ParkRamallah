@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django import forms
 from django.utils import timezone
 from datetime import datetime
-from .models import Reservation, Park
+from .models import Reservation, Park, Comment
 from django.forms import DateTimeInput
 from django.core.exceptions import ValidationError
 from datetime import timedelta
@@ -176,3 +176,25 @@ class ReservationForm(forms.ModelForm):
     class Meta:
         model = Reservation
         fields = ['date', 'start_time', 'duration']
+
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['title', 'content']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter title'}),
+            'content': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Enter content'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        title = cleaned_data.get('title')
+        content = cleaned_data.get('content')
+
+        if not title:
+            self.add_error('title', "Title cannot be empty.")
+        if not content:
+            self.add_error('content', "Content cannot be empty.")
+
+        return cleaned_data

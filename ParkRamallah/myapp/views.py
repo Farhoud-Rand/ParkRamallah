@@ -247,3 +247,17 @@ def profile_view(request):
 
 def about_us_view(request):
     return render(request, "about_us.html")
+
+from .forms import CommentForm
+
+def add_comment(request):
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.user = request.user  # Assuming you're using Django's built-in User model
+            comment.save()
+            return redirect('home')  # Redirect to the home page or wherever you want
+    else:
+        form = CommentForm()
+    return render(request, 'add_comment.html', {'form': form})

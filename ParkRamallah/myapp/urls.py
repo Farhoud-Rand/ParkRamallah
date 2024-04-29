@@ -17,4 +17,5 @@ urlpatterns = [
     path('all_parks/', views.all_parks, name='all_parks'),
     path('profile/', views.profile_view, name='profile'),
     path('about_us',views.about_us_view),
+    path('add_comment',views.add_comment),
 ]
