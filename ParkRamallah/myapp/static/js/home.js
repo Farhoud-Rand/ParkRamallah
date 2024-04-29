@@ -125,7 +125,6 @@ function getBadgeColor(status) {
     }
 }
 // Function to edit a reservation
-// Function to edit a reservation
 function editReservation(reservationId) {
     // Send a request to the server to update the reservation status to "cancelled"
     fetch(`/edit_reservation/${reservationId}/`, {  // Note the trailing slash
@@ -151,33 +150,34 @@ function editReservation(reservationId) {
 }
 
 // Function to cancel a reservation
-// Function to cancel a reservation
 function cancelReservation(reservationId) {
-    // Send a request to the server to update the reservation status to "cancelled"
-    fetch(`/cancel_reservation/${reservationId}/`, {  // Note the trailing slash
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'), // Include CSRF token
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({}) // Empty body since we're just updating the status
-    })
-    .then(response => {
-        if (response.ok) {
-            // Reservation successfully cancelled
-            console.log(`Reservation with ID ${reservationId} cancelled successfully.`);
-            // Update UI to reflect the cancelled status
-            const statusBadge = document.querySelector(`#collapse${reservationId} .badge`);
-            statusBadge.textContent = 'cancelled'; // Update badge text
-            statusBadge.classList.remove('bg-primary', 'bg-secondary'); // Remove existing classes
-            statusBadge.classList.add('bg-danger'); // Add cancelled status class
-        } else {
-            // Error occurred while cancelling reservation
-            console.error(`Error cancelling reservation with ID ${reservationId}: ${response.statusText}`);
+    // Display a sweet alert to confirm cancellation
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'You are about to cancel this reservation!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, cancel it!',
+        cancelButtonText: 'No, keep it'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // User confirmed the cancellation
+            const csrfToken = document.getElementById('csrf_token').value;
+            // Send a request to the server to update the reservation status to "cancelled"
+            fetch(`/cancel_reservation/${reservationId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken, // Include CSRF token
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/home';    
+                }
+            })
+            .catch(error => {
+                console.error(`Error cancelling reservation with ID ${reservationId}: ${error}`);
+            });
         }
-    })
-    .catch(error => {
-        console.error(`Error cancelling reservation with ID ${reservationId}: ${error}`);
     });
 }
-

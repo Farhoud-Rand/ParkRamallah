@@ -1,11 +1,10 @@
 from django.shortcuts import render, redirect
-from .forms import ReservationForm, UserRegisterForm, UserLoginForm
+from .forms import ReservationForm, UserRegisterForm, UserLoginForm, CommentForm
 from datetime import datetime, timedelta
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from . import models
 from django.contrib.auth.decorators import login_required
-
 
 # Users: Register page
 # This function handles user registration 
@@ -137,39 +136,26 @@ def reserve(request, park_id):
             return JsonResponse({'success': True, 'message': 'Reservation successfully made!'})
         else:
             errors = form.errors
-            logger.error("Form errors: %s", errors)  # Log form errors for debugging
+            # logger.error("Form errors: %s", errors)  # Log form errors for debugging
             return JsonResponse({'success': False, 'errors': errors}, status=400)
     else:
         form = ReservationForm(park_id=park_id)
     return render(request, 'reservation.html', {'form': form, 'park': park})
 
+from django.shortcuts import get_object_or_404
+
 @login_required(login_url='/not_login')
 def cancel_reservation(request, reservation_id):
-    try:
-        reservation = models.Reservation.objects.get(pk=reservation_id)
-    except models.Reservation.DoesNotExist:
-        return JsonResponse({'success': False, 'message': 'Reservation not found'}, status=404)
-    
+    # Fetch the reservation object corresponding to the ID
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+
     # Update the reservation status to "cancelled"
     reservation.status = 'cancelled'
     reservation.save()
 
     return JsonResponse({'success': True, 'message': 'Reservation cancelled successfully'})
 
-# Define a view to handle updating reservation status to "expired"
-def expire_reservation(request, reservation_id):
-    try:
-        reservation = models.Reservation.objects.get(pk=reservation_id)
-    except models.Reservation.DoesNotExist:
-        return JsonResponse({'success': False, 'message': 'Reservation not found'}, status=404)
-    
-    if reservation.status != 'expired' and reservation.status != 'cancelled': #and reservation.end_time < timezone.now():
-        reservation.status = 'expired'
-        reservation.save()
-        return JsonResponse({'success': True, 'message': 'Reservation expired successfully'})
-    else:
-        return JsonResponse({'success': False, 'message': 'Reservation already expired or cancelled'})
-    
+
 
 @login_required(login_url='/not_login')
 def edit_reservation(request, reservation_id):
@@ -226,8 +212,6 @@ def profile_view(request):
 
 def about_us_view(request):
     return render(request, "about_us.html")
-
-from .forms import CommentForm
 
 def add_comment(request):
     if request.method == 'POST':

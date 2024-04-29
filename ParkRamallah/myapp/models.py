@@ -85,6 +85,11 @@ class Reservation(models.Model):
         } for reservation in reservations]
         return serialized_reservations
 
+    # Function to get a specific reservation by ID
+    @classmethod
+    def get_reservation_by_id(cls, id):
+        return cls.objects.get(id)
+
 # Comment table (has a relation one to many with user table)
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_comments', null=True)
