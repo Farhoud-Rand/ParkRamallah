@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from . import models
 from django.contrib.auth.decorators import login_required
 
+
 # Users: Register page
 # This function handles user registration 
 def register_view(request):
@@ -77,8 +78,27 @@ def home(request):
 @login_required(login_url='/not_login')
 def user_reservations(request):
     reservations = models.Reservation.get_user_reservations(request.user)
+    # Update reservation status before sending to frontend
+    update_reservation_status(reservations)
     serialized_reservations = models.Reservation.serialize_reservations(reservations)
     return JsonResponse(serialized_reservations, safe=False)
+
+def update_reservation_status(reservations):
+    current_time = timezone.now()
+
+    for reservation in reservations:
+        if reservation.status not in ['cancelled', 'expired']:
+            start_datetime = datetime.combine(reservation.date, reservation.start_time)
+            start_datetime = timezone.make_aware(start_datetime)  # Ensure start_datetime is timezone-aware
+            duration_hours = float(reservation.duration)
+            end_datetime = start_datetime + timedelta(hours=duration_hours)
+
+            print("End time:", end_datetime)  # Print end_datetime for debugging
+            print("Current time:", current_time)  # Print current_time for debugging
+            print("Result",end_datetime < current_time)
+            if end_datetime < current_time:
+                reservation.status = 'expired'
+                reservation.save()
 
 # This function returns result of search as json response
 @login_required(login_url='/not_login')
@@ -95,37 +115,6 @@ def all_parks(request):
     return JsonResponse(serialized_parks, safe=False)
 
 # Users: Reservation page
-from decimal import Decimal
-
-# @login_required(login_url='/not_login')
-# def reserve(request, park_id):
-#     try:
-#         park = models.Park.objects.get(id=park_id)
-#     except models.Park.DoesNotExist:
-#         return JsonResponse({'success': False, 'errors': 'Park does not exist.'}, status=400)
-
-#     if request.method == 'POST':
-#         form = ReservationForm(request.POST, park_id=park_id)
-#         if form.is_valid():
-#             reservation = form.save(commit=False)
-#             reservation.user = request.user
-#             reservation.park = park
-#             reservation.status = 'active'
-#             reservation.total_price = 10 * float(form.cleaned_data['duration'])
-#             reservation.save()
-#             return JsonResponse({'success': True, 'message': 'Reservation successfully made!'})
-#         else:
-#             errors = form.errors
-#             return JsonResponse({'success': False, 'errors': errors}, status=400)
-#     else:
-#         form = ReservationForm(park_id=park_id)
-#     return render(request, 'reservation.html', {'form': form, 'park': park})
-
-from django.http import JsonResponse
-import logging
-
-logger = logging.getLogger(__name__)
-
 @login_required(login_url='/not_login')
 def reserve(request, park_id):
     try:
@@ -166,7 +155,6 @@ def cancel_reservation(request, reservation_id):
     reservation.save()
 
     return JsonResponse({'success': True, 'message': 'Reservation cancelled successfully'})
-
 
 # Define a view to handle updating reservation status to "expired"
 def expire_reservation(request, reservation_id):
@@ -212,16 +200,7 @@ from django.utils import timezone
 from .models import Reservation
 from decimal import Decimal
 
-@receiver(post_save, sender=Reservation)
-def update_reservation_status(sender, instance, **kwargs):
-    if instance.status != 'cancelled' and instance.status != 'expired':  
-        start_datetime = timezone.make_aware(datetime.combine(instance.date, instance.start_time))
-        duration_float = float(instance.duration)  # Convert Decimal to float
-        end_datetime = start_datetime + timedelta(hours=duration_float)
-        if end_datetime < timezone.now():
-            instance.status = 'expired'
-            instance.save()
-    
+
 @login_required(login_url='/not_login')
 def profile_view(request):
     user = request.user
