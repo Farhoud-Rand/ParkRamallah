@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .forms import ReservationForm, UserRegisterForm, UserLoginForm, CommentForm, UpdateProfileForm
+from .forms import ReservationForm, UserRegisterForm, UserLoginForm, CommentForm, UpdateProfileForm, UpdatePasswordForm
 from datetime import datetime, timedelta
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
@@ -215,7 +215,7 @@ def profile_view(request):
         form = UpdateProfileForm(request.POST, instance=user)
         if form.is_valid():
             form.save()  # Update the user's information
-            # Login the user agin
+            # Login the user again
             login(request, user)
             if user is not None:
                 return JsonResponse({'success': True})  # Return success response
@@ -228,6 +228,27 @@ def profile_view(request):
         form = UpdateProfileForm(instance=user)  # Pre-fill the form with user's data
     
     return render(request, "profile.html", {'form': form})
+
+@login_required(login_url='/not_login')
+def update_password(request):
+    user = request.user
+    if request.method == 'POST':
+        form = UpdatePasswordForm(user, request.POST)
+        if form.is_valid():
+            form.save()  # Update the user's information
+            # Login the user again
+            login(request, user)
+            if user is not None:
+                return JsonResponse({'success': True})  # Return success response
+            else:
+                return JsonResponse({'success': False, 'errors': 'Authentication failed'}, status=400)
+        else:
+            errors = form.errors
+            return JsonResponse({'success': False, 'errors': errors}, status=400)
+    else:
+        form = UpdatePasswordForm(user)  # Pre-fill the form with user's data
+    
+    return render(request, "update_password.html", {'form':form})
 
 def about_us_view(request):
     return render(request, "about_us.html")

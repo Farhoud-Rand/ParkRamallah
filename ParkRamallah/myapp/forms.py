@@ -1,4 +1,4 @@
-from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm, SetPasswordForm
 from django.contrib.auth.models import User
 from django import forms
 from django.utils import timezone
@@ -182,3 +182,15 @@ class UpdateProfileForm(UserChangeForm):
         if User.objects.filter(email=email).exclude(pk=user.pk).exists():
             raise forms.ValidationError("This email is already registered")
         return email
+
+# Form to update user password
+class UpdatePasswordForm(SetPasswordForm):
+    class Meta:
+        model = User
+        fields = ['new_password1', 'new_password2']
+
+    def __init__(self, *args, **kwargs):
+        super(UpdatePasswordForm, self).__init__(*args, **kwargs)
+        # Override widget attributes for form fields
+        self.fields['new_password1'].widget = forms.PasswordInput(attrs={'class': 'form-control p-2', 'placeholder': 'Password'})
+        self.fields['new_password2'].widget = forms.PasswordInput(attrs={'class': 'form-control p-2', 'placeholder': 'Confirm Password'})
