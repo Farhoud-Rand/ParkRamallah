@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .forms import ReservationForm, UserRegisterForm, UserLoginForm, CommentForm
+from .forms import ReservationForm, UserRegisterForm, UserLoginForm, CommentForm, UpdateProfileForm
 from datetime import datetime, timedelta
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
@@ -212,13 +212,11 @@ from decimal import Decimal
 def profile_view(request):
     user = request.user
     if request.method == 'POST':
-        form = UserRegisterForm(request.POST, instance=user)
+        form = UpdateProfileForm(request.POST, instance=user)
         if form.is_valid():
             form.save()  # Update the user's information
-            # Authenticate and login the user
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password1')
-            user = authenticate(request,username=username, password=password)
+            # Login the user agin
+            login(request, user)
             if user is not None:
                 return JsonResponse({'success': True})  # Return success response
             else:
@@ -227,7 +225,7 @@ def profile_view(request):
             errors = form.errors
             return JsonResponse({'success': False, 'errors': errors}, status=400)
     else:
-        form = UserRegisterForm(instance=user)  # Pre-fill the form with user's data
+        form = UpdateProfileForm(instance=user)  # Pre-fill the form with user's data
     
     return render(request, "profile.html", {'form': form})
 

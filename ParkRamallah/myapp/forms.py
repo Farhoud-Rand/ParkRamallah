@@ -1,4 +1,4 @@
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth.models import User
 from django import forms
 from django.utils import timezone
@@ -48,47 +48,7 @@ class UserLoginForm(forms.Form):
     username = forms.CharField(max_length=150,widget=forms.TextInput(attrs={'class': 'form-control p-2', 'placeholder': 'Username'}))
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control p-2', 'placeholder': 'Password'}))
 
-# Form to add new reservation for a user  
-# class ReservationForm(forms.ModelForm):
-#     class Meta:
-#         model = Reservation
-#         fields = ['park', 'start_time', 'end_time']
-#         widgets = {
-#             'start_time': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-#             'end_time': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-#         }
-
-#     def clean(self):
-#         cleaned_data = super().clean()
-#         start_time = cleaned_data.get('start_time')
-#         end_time = cleaned_data.get('end_time')
-#         park = cleaned_data.get('park')
-
-#         if start_time and end_time and park:
-#             # Check if end time is greater than start time
-#             if end_time <= start_time:
-#                 raise forms.ValidationError("End time must be greater than start time.")
-            
-#             # Check if start time is in the past
-#             if start_time <= timezone.now():
-#                 raise forms.ValidationError("Start time cannot be in the past.")
-            
-#             # Check if there are any existing reservations for the selected park
-#             existing_reservations = Reservation.objects.filter(
-#                 park=park,
-#                 start_time__lt=end_time,
-#                 end_time__gt=start_time,
-#                 status='active'  # Only consider active reservations
-#             )
-
-#             if existing_reservations.exists():
-#                 raise forms.ValidationError("This time slot is already reserved.")
-#         return cleaned_data
-
-
-
-from django.utils import timezone
-
+# Form to reserve a parking lot
 class ReservationForm(forms.ModelForm):
     choices_for_start_time = []
     choices_for_duration = []
@@ -181,7 +141,7 @@ class ReservationForm(forms.ModelForm):
         model = Reservation
         fields = ['date', 'start_time', 'duration']
 
-
+# Form to add new comment and send it to admins
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
@@ -202,3 +162,23 @@ class CommentForm(forms.ModelForm):
             self.add_error('content', "Content cannot be empty.")
 
         return cleaned_data
+
+# Form to update user profile
+class UpdateProfileForm(UserChangeForm):
+    password = None
+    class Meta:
+        model = User
+        fields = ['username', 'email']
+
+    def __init__(self, *args, **kwargs):
+        super(UpdateProfileForm, self).__init__(*args, **kwargs)
+        # Override widget attributes for form fields
+        self.fields['username'].widget = forms.TextInput(attrs={'class': 'form-control p-2', 'placeholder': 'Username'})
+        self.fields['email'].widget = forms.EmailInput(attrs={'class': 'form-control p-2', 'placeholder': 'Email', 'required': True})
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        user = self.instance
+        if User.objects.filter(email=email).exclude(pk=user.pk).exists():
+            raise forms.ValidationError("This email is already registered")
+        return email
