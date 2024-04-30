@@ -50,6 +50,10 @@ class UserLoginForm(forms.Form):
 
 # Form to reserve a parking lot
 class ReservationForm(forms.ModelForm):
+    class Meta:
+        model = Reservation
+        fields = ['date', 'start_time', 'duration','car_number']
+    
     choices_for_start_time = []
     choices_for_duration = []
 
@@ -98,20 +102,25 @@ class ReservationForm(forms.ModelForm):
             widget=forms.Select(attrs={'class': 'form-control'})
         )
 
+        self.fields['car_number'].widget.attrs['class'] ='form-control'    
+
     def clean(self):
         cleaned_data = super().clean()
         date = cleaned_data.get('date')
         start_time = cleaned_data.get('start_time')
         duration = cleaned_data.get('duration')
+        car_number = cleaned_data.get('car_number')
         park_id = self.park_id
         
-        # Ensure date, start_time, and duration are provided
+        # Ensure date, start_time, duration and car_number are provided
         if not date:
             raise forms.ValidationError("Date is required")
         if not start_time:
             raise forms.ValidationError("Start time is required")
         if not duration:
             raise forms.ValidationError("Duration is required")
+        if not car_number:
+            raise forms.ValidationError("Car Number is required")
 
         if date < timezone.now().date():
             raise forms.ValidationError("Selected date is in the past")
@@ -136,10 +145,6 @@ class ReservationForm(forms.ModelForm):
         if conflicting_reservations.exists():
             raise forms.ValidationError("This time slot is already reserved")
         return cleaned_data
-
-    class Meta:
-        model = Reservation
-        fields = ['date', 'start_time', 'duration']
 
 # Form to add new comment and send it to admins
 class CommentForm(forms.ModelForm):
@@ -194,3 +199,4 @@ class UpdatePasswordForm(SetPasswordForm):
         # Override widget attributes for form fields
         self.fields['new_password1'].widget = forms.PasswordInput(attrs={'class': 'form-control p-2', 'placeholder': 'Password'})
         self.fields['new_password2'].widget = forms.PasswordInput(attrs={'class': 'form-control p-2', 'placeholder': 'Confirm Password'})
+

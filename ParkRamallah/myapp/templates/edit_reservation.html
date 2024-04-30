@@ -43,6 +43,26 @@
         .container-bg {
             margin: 5%;
         }
+        .datepicker {
+            padding: 20px; /* Adjust the padding size as needed */
+        }
+        
+        .datepicker th {
+            text-align: center;
+        }
+        .datepicker table tr td {
+            padding: 10px; /* Adjust the padding size as needed */
+            font-size: 15px; /* Adjust the font size as needed */
+        }
+        
+        .datepicker td.active,
+        .datepicker td.active:hover,
+        .datepicker td.active.disabled,
+        .datepicker td.active.disabled:hover {
+            background-color: #007bff; /* Change to the color you prefer */
+            border-color: #007bff; /* Change to the color you prefer */
+            color: #fff; /* Change to the color you prefer */
+        }
 
         /* Hide CSRF token input field */
         #csrf_token {
@@ -90,7 +110,7 @@
                         {% csrf_token %}
                         <div class="form-group">
                             <label for="id_date">Date:</label>
-                            <input type="text" class="form-control" id="id_date" name="date" value="{{ reservation.date }}" disabled>
+                            <input type="text" class="form-control datepicker" id="id_date" name="date" value="{{ reservation.date }}">
                         </div>
                         <div class="form-group">
                             <label for="id_start_time">Start Time:</label>
@@ -108,6 +128,11 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        <div class="form-group">
+                            {{ form.car_number.errors }}
+                            <label for="{{ form.car_number.id_for_label }}">Car Number:</label>
+                            <input type="text" class="form-control" id="id_car_number" name="car_number" value="{{ reservation.car_number }}">                    
+                        </div>
                         <button type="submit" class="btn btn-primary">Update Reservation</button>
                     </form>
                 </div>
@@ -115,9 +140,33 @@
         </div>
     </div>
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- SweetAlert2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>   
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>   
+<!-- Hidden input field to hold CSRF token -->
+<input type="hidden" id="csrf_token" value="{% csrf_token %}">   
+<!-- Bootstrap Datepicker JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<!-- Datepicker Initialization -->
+<script>
+    $(document).ready(function(){
+        // Get the value of the input field
+        var selectedDateStr = $('#id_date').val();
+        
+        // Parse the date string into a JavaScript Date object
+        var selectedDate = new Date(selectedDateStr);
+
+        // Initialize the datepicker with the selected date
+        $('.datepicker').datepicker({
+            format: 'yyyy-mm-dd',
+            autoclose: true,
+            todayHighlight: true,
+            startDate: selectedDate, // Set the start date to the selected date string
+        }).datepicker('setDate', selectedDate); // Set the selected date in the datepicker
+    });
+</script>  
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const csrfToken = document.getElementById('csrf_token').value;

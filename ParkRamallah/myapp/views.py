@@ -170,10 +170,15 @@ def remove_reservation(request, reservation_id):
 @login_required(login_url='/not_login')
 def edit_reservation(request, reservation_id):
     reservation = get_object_or_404(models.Reservation, id=reservation_id)
-    print("Reservation = ",reservation)
+    current_time = timezone.now()
+
+    # Get the choices for start time
     start_time_choices = ReservationForm(instance=reservation).fields['start_time'].choices
-    print("Time = ",start_time_choices)
-    print("RT = ", reservation.start_time)
+
+    # Add the user-selected time to choices if it's not in the past
+    user_selected_time = reservation.start_time.strftime('%H:%M')
+    if reservation.date == current_time.date() and reservation.start_time >= current_time.time():
+        start_time_choices.append((user_selected_time, user_selected_time))
     
     duration_choices = ReservationForm(instance=reservation).fields['duration'].choices
     
@@ -181,23 +186,13 @@ def edit_reservation(request, reservation_id):
         form = ReservationForm(request.POST, instance=reservation)
         if form.is_valid():
             form.save()
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-
-                return JsonResponse({'success': True})  # Return success response for AJAX request
-            else:
-                # Redirect to some success page for non-AJAX request
-                # For example: return redirect('success_page')
-                pass
+            return JsonResponse({'success': True})  # Return success response for AJAX request
         else:
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-
-                return JsonResponse({'success': False, 'errors': form.errors}, status=400)  # Return form errors for AJAX request
-            else:
-                # Render the form again with errors for non-AJAX request
-                pass
+            errors = form.errors
+            # logger.error("Form errors: %s", errors)  # Log form errors for debugging
+            return JsonResponse({'success': False, 'errors': errors}, status=400)
     else:
         form = ReservationForm(instance=reservation)
-
     return render(request, 'edit_reservation.html', {'form': form, 'reservation': reservation, 'start_time_choices': start_time_choices, 'duration_choices': duration_choices})
 
 

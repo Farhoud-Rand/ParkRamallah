@@ -94,6 +94,7 @@ function displayReservations(reservations) {
                 <div class="accordion-body">
                     <ul class="list-group">
                         <li class="list-group-item">Park Number: ${reservation.park}</li>
+                        <li class="list-group-item">Car Number: ${reservation.car_number}</li>
                         <li class="list-group-item">Arrival Time: ${reservation.start_time}</li>
                         <li class="list-group-item">Duration Time: ${reservation.duration}</li>
                     </ul>

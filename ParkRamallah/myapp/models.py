@@ -65,6 +65,7 @@ class Reservation(models.Model):
     duration = models.DecimalField(max_digits=3, decimal_places=1)  # in hours
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     total_price = models.FloatField(default=0.0)
+    car_number = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -82,6 +83,7 @@ class Reservation(models.Model):
             'park': reservation.park.id,
             'start_time': reservation.start_time.strftime('%H:%M'),
             'duration': reservation.duration,
+            'car_number':reservation.car_number,
         } for reservation in reservations]
         return serialized_reservations
 

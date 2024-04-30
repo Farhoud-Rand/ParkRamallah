@@ -44,6 +44,27 @@
         .container-bg {
             margin: 5%;
         }
+
+        .datepicker {
+            padding: 20px; /* Adjust the padding size as needed */
+        }
+        
+        .datepicker th {
+            text-align: center;
+        }
+        .datepicker table tr td {
+            padding: 10px; /* Adjust the padding size as needed */
+            font-size: 15px; /* Adjust the font size as needed */
+        }
+        
+        .datepicker td.active,
+        .datepicker td.active:hover,
+        .datepicker td.active.disabled,
+        .datepicker td.active.disabled:hover {
+            background-color: #007bff; /* Change to the color you prefer */
+            border-color: #007bff; /* Change to the color you prefer */
+            color: #fff; /* Change to the color you prefer */
+        }
     </style>
 </head>
 <body>
@@ -77,7 +98,7 @@
     </nav>
     <div class="container mt-5">
         <div class="row justify-content-center">
-            <div class="col-md-6">
+            <div class="col-md-6 mt-5">
                 <h2 class="mb-4">Make Reservation</h2>
                 <form method="post" id="reserve_form">
                     {% csrf_token %}
@@ -96,16 +117,17 @@
                     <div class="form-group">
                         {{ form.start_time.errors }}
                         <label for="{{ form.start_time.id_for_label }}">Start Time:</label>
-                        {{ form.start_time }}
-
-                            <!-- Add more options as needed -->
-                        
+                        {{ form.start_time }}                        
                     </div>
                     <div class="form-group">
                         {{ form.duration.errors }}
                         <label for="{{ form.duration.id_for_label }}">Duration:</label>
                         {{ form.duration }}
-                            <!-- Add more options as needed -->
+                    </div>
+                    <div class="form-group">
+                        {{ form.car_number.errors }}
+                        <label for="{{ form.car_number.id_for_label }}">Car Number:</label>
+                        {{ form.car_number }}                        
                     </div>
                     <input type="hidden" name="park_id" value="{{ park.id }}">
                     <button type="submit" class="btn btn-primary">Make Reservation</button>
@@ -191,8 +213,6 @@
                 });
             });
         });
-        
-    
     </script>
 </body>
 </html>
